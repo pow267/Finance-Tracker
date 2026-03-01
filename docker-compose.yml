@@ -8,6 +8,10 @@ services:
       - MONGO_URL=mongodb://mongo:27017/finance_demo
     ports:
       - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
     depends_on:
       - mongo
 

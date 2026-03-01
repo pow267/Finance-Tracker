@@ -6,14 +6,26 @@ const { Transaction, Setting } = require('./models/Transaction');
 const app = express();
 const PORT = 3000;
 
-// =======================
-// MONGO CONNECTION
-// =======================
 const MONGO_URL =
   process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/finance_demo';
 
+// =======================
+// CONNECT MONGO + AUTO SEED
+// =======================
 mongoose.connect(MONGO_URL)
-  .then(() => console.log('✅ MongoDB connected'))
+  .then(async () => {
+    console.log('✅ MongoDB connected');
+
+    const count = await Transaction.countDocuments();
+
+    if (count === 0) {
+      console.log('🌱 DB trống → tự động seed dữ liệu...');
+      await require('./seed')();
+      console.log('✅ Seed hoàn tất');
+    } else {
+      console.log('📦 DB đã có dữ liệu');
+    }
+  })
   .catch(err => console.error('Mongo Error:', err));
 
 // =======================
@@ -22,60 +34,51 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
 // =======================
-// HOME
-// =======================
 app.get('/', async (req, res) => {
-  try {
-    const transactions = await Transaction.find().sort({ date: -1 });
+  const transactions = await Transaction.find().sort({ date: -1 });
 
-    let budget = await Setting.findOne({ key: 'budget_limit' });
-    if (!budget) {
-      budget = await Setting.create({
-        key: 'budget_limit',
-        value: 10000000
-      });
-    }
-
-    if (transactions.length === 0) {
-      return res.render('index', {
-        transactions: [],
-        totalIncome: 0,
-        totalExpense: 0,
-        balance: 0,
-        selectedYear: new Date().getFullYear(),
-        budgetLimit: budget.value
-      });
-    }
-
-    const latestYear = new Date(transactions[0].date).getFullYear();
-
-    let totalIncome = 0;
-    let totalExpense = 0;
-
-    transactions.forEach(t => {
-      const year = new Date(t.date).getFullYear();
-      if (year === latestYear) {
-        if (t.type === 'income') totalIncome += t.amount;
-        else totalExpense += t.amount;
-      }
+  let budget = await Setting.findOne({ key: 'budget_limit' });
+  if (!budget) {
+    budget = await Setting.create({
+      key: 'budget_limit',
+      value: 10000000
     });
+  }
 
-    res.render('index', {
-      transactions,
-      totalIncome,
-      totalExpense,
-      balance: totalIncome - totalExpense,
-      selectedYear: latestYear,
+  if (transactions.length === 0) {
+    return res.render('index', {
+      transactions: [],
+      totalIncome: 0,
+      totalExpense: 0,
+      balance: 0,
+      selectedYear: new Date().getFullYear(),
       budgetLimit: budget.value
     });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server Error');
   }
+
+  const latestYear = new Date(transactions[0].date).getFullYear();
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  transactions.forEach(t => {
+    const year = new Date(t.date).getFullYear();
+    if (year === latestYear) {
+      if (t.type === 'income') totalIncome += t.amount;
+      else totalExpense += t.amount;
+    }
+  });
+
+  res.render('index', {
+    transactions,
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense,
+    selectedYear: latestYear,
+    budgetLimit: budget.value
+  });
 });
 
-// =======================
 app.post('/add', async (req, res) => {
   const { title, amount, category, type, date } = req.body;
 

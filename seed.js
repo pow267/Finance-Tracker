@@ -1,15 +1,8 @@
-const mongoose = require('mongoose');
 const { Transaction } = require('./models/Transaction');
 
-const MONGO_URL =
-  process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/finance_demo';
-
-mongoose.connect(MONGO_URL)
-  .then(() => console.log('✅ MongoDB connected (seed)'))
-  .catch(err => console.error(err));
-
-async function seed() {
+module.exports = async function seed() {
   await Transaction.deleteMany({});
+
   const data = [];
 
   [2025, 2026].forEach(year => {
@@ -41,8 +34,4 @@ async function seed() {
   });
 
   await Transaction.insertMany(data);
-  console.log('✅ Đã nạp dữ liệu mẫu 24 tháng (2025-2026)!');
-  process.exit();
-}
-
-seed();
+};

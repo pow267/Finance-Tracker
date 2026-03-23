@@ -148,8 +148,37 @@
 
         expChart = new Chart(document.getElementById('expTrend'), {
             type: 'bar',
-            data: { labels, datasets: [{ label: 'Chi tiêu', data: expData, backgroundColor: '#e74a3b' }] },
-            options: commonOpt
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Chi tiêu',
+                        data: expData,
+                        backgroundColor: '#e74a3b'
+                    },
+                    {
+                        label: 'Hạn mức',
+                        data: new Array(12).fill(<%= budgetLimit %>), // 👈 quan trọng
+                        type: 'line',
+                        borderColor: '#4e73df',
+                        borderWidth: 2,
+                        fill: false,
+                        pointRadius: 0,
+                        tension: 0,
+                         borderDash: [6, 6]
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
         });
 
         incChart = new Chart(document.getElementById('incTrend'), {

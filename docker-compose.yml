@@ -18,6 +18,8 @@ services:
   mongo:
     image: mongo:6
     container_name: finance_mongo
+    ports:
+    - "27017:27017"
     volumes:
       - mongo_data:/data/db
 
